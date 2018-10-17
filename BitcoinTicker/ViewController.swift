@@ -15,8 +15,8 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     let baseURL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/BTC"
     let currencyArray = ["AUD", "BRL","CAD","CNY","EUR","GBP","HKD","IDR","ILS","INR","JPY","MXN","NOK","NZD","PLN","RON","RUB","SEK","SGD","USD","ZAR"]
     var finalURL = ""
+    let currencySymbol = ["$", "R$", "$", "¥", "€", "£", "$", "Rp", "₪", "₹", "¥", "$", "kr", "$", "zł", "lei", "₽", "kr", "$", "$", "R"]
 
-    //Pre-setup IBOutlets
     @IBOutlet weak var bitcoinPriceLabel: UILabel!
     @IBOutlet weak var currencyPicker: UIPickerView!
     
@@ -24,6 +24,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        bitcoinPriceLabel.adjustsFontSizeToFitWidth = true
        
     }
     
@@ -42,23 +43,16 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         print(currencyArray[row])
         finalURL = baseURL + currencyArray[row]
-        getPriceData(url: finalURL)
+        getPriceData(url: finalURL, symbol: row)
         
     }
     
-    //TODO: Place your 3 UIPickerView delegate methods here
     
     
+    //MARK: - Networking
+    /***************************************************************/
     
-
-    
-    
-    
-//    
-//    //MARK: - Networking
-//    /***************************************************************/
-//    
-    func getPriceData(url: String) {
+    func getPriceData(url: String, symbol: Int) {
         
         Alamofire.request(url, method: .get)
             .responseJSON { response in
@@ -67,7 +61,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                     print("Sucess! Got the bitcoin price data")
                     let priceJSON : JSON = JSON(response.result.value!)
 
-                    self.updatePriceData(json: priceJSON)
+                    self.updatePriceData(json: priceJSON, symbol: symbol)
 
                 } else {
                     print("Error: \(String(describing: response.result.error))")
@@ -76,27 +70,32 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             }
 
     }
-//
-//    
-//    
-//    
-//    
-//    //MARK: - JSON Parsing
-//    /***************************************************************/
-//    
-/*    func updatePriceData(json : JSON) {
+   
+    //MARK: - JSON Parsing
+    /***************************************************************/
+
+    
+    func updatePriceData(json : JSON, symbol: Int) {
         
-        if let tempResult = json["main"]["temp"].double {
-        
-        weatherData.temperature = Int(round(tempResult!) - 273.15)
-        weatherData.city = json["name"].stringValue
-        weatherData.condition = json["weather"][0]["id"].intValue
-        weatherData.weatherIconName =    weatherData.updateWeatherIcon(condition: weatherData.condition)
+        if let averagePrice = json["averages"]["day"].double {
+            self.bitcoinPriceLabel.text = self.currencySymbol[symbol] + String(averagePrice)
         }
+        else {
+            processErrors()
+        }
+    }
+    
+    func processErrors() {
+        let myAlert = UIAlertController(title: "Alert", message: "Error loading the data occured.", preferredStyle: UIAlertController.Style.alert)
         
-        updateUIWithWeatherData()
-    }*/
-//    
+        let okAction = UIAlertAction(title: "Ok", style: UIAlertAction.Style.default, handler: nil)
+        
+        myAlert.addAction(okAction)
+        
+        self.present(myAlert, animated: true, completion: nil)
+        
+        return
+    }
 
 
 
